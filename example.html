@@ -47,6 +47,10 @@
 			}
 		});
 
+		layer.on("mouseover", function(event) {
+			console.log(event.layer.properties);
+		}
+
 		layer.addTo(
 		    mymap
 		);
