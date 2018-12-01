@@ -29,7 +29,7 @@ var bbox_psql_function = `
       LANGUAGE plpgsql IMMUTABLE;
 `
 
-func fetchTile(layer_name string, x, y, z int) ([]uint8, error) {
+func fetchTileFromDatabase(layer_name string, x, y, z int) ([]uint8, error) {
 
 	var tile []uint8
 
@@ -42,15 +42,10 @@ func fetchTile(layer_name string, x, y, z int) ([]uint8, error) {
 	bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
 
 	// https://blog.jawg.io/how-to-make-mvt-with-postgis/
-	row := db.QueryRow(fmt.Sprintf(`
+	query := fmt.Sprintf(`
         WITH features AS (
             SELECT
-                lyr.gid,
-                lyr.statefp10,
-                lyr.pumace10,
-                lyr.geoid10,
-                lyr.namelsad10,
-                lyr.mtfcc10,
+				row_to_json(lyr)::jsonb - 'geom' AS properties,
                 ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
             FROM
                 %v AS lyr
@@ -60,12 +55,7 @@ func fetchTile(layer_name string, x, y, z int) ([]uint8, error) {
             ST_AsMVT(q, 'layer', 4096, 'geom')
         FROM (
             SELECT
-                fts.gid,
-                fts.statefp10,
-                fts.pumace10,
-                fts.geoid10,
-                fts.namelsad10,
-                fts.mtfcc10,
+				fts.properties,
                 ST_AsMvtGeom(
                     fts.geom,
                     %v,
@@ -83,7 +73,11 @@ func fetchTile(layer_name string, x, y, z int) ([]uint8, error) {
                         %v
                     )
         ) AS q;
-    `, layer_name, bbox, bbox, bbox))
+    `, layer_name, bbox, bbox, bbox)
+
+	// logger.Debug(query)
+
+	row := db.QueryRow(query)
 
 	err = row.Scan(&tile)
 	if nil != err {
