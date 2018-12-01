@@ -49,7 +49,6 @@ var PORT = 5555
 func VectorTileHandler(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
-	// logger.Info("request initiated")
 
 	ctx := r.Context()
 
