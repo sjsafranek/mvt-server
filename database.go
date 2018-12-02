@@ -7,81 +7,114 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// https://c.tile.openstreetmap.org/8/75/95.png
-// https://raw.githubusercontent.com/jawg/blog-resources/master/how-to-make-mvt-with-postgis/bbox.sql
-var bbox_psql_function = `
-    CREATE OR REPLACE FUNCTION BBox(x integer, y integer, zoom integer)
-        RETURNS geometry AS
-    $BODY$
-    DECLARE
-        max numeric := 6378137 * pi();
-        res numeric := max * 2 / 2^zoom;
-        bbox geometry;
-    BEGIN
-        return ST_MakeEnvelope(
-            -max + (x * res),
-            max - (y * res),
-            -max + (x * res) + res,
-            max - (y * res) - res,
-            3857);
-    END;
-    $BODY$
-      LANGUAGE plpgsql IMMUTABLE;
-`
-
-func fetchTileFromDatabase(layer_name string, x, y, z int) ([]uint8, error) {
-
-	var tile []uint8
-
-	db, err := sql.Open("postgres", "postgres://stefan:geolRocks@localhost/stefan")
+func executeDatabaseQuery(f func(*sql.DB, error) error) error {
+	db, err := sql.Open("postgres", config.Database.ConnectionString())
 	if nil != err {
-		return tile, err
+		return err
 	}
 	defer db.Close()
+	return f(db, err)
+}
 
-	bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
+func fetchLayersFromDatabase() (string, error) {
+	var result string
+	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+		if nil != err {
+			return err
+		}
+		query := `
+			SELECT json_agg(c)
+		        FROM (
+		            SELECT
+		                *
+		            FROM layers
+		            WHERE
+		                is_deleted = false
+		        ) c;
+		`
+		row := db.QueryRow(query)
+		return row.Scan(&result)
+	})
 
-	// https://blog.jawg.io/how-to-make-mvt-with-postgis/
-	query := fmt.Sprintf(`
-        WITH features AS (
-            SELECT
-				row_to_json(lyr)::jsonb - 'geom' AS properties,
-                ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
-            FROM
-                %v AS lyr
-        )
-
-        SELECT
-            ST_AsMVT(q, 'layer', 4096, 'geom')
-        FROM (
-            SELECT
-				fts.properties,
-                ST_AsMvtGeom(
-                    fts.geom,
-                    %v,
-                    4096,
-                    256,
-                    true
-                ) AS geom
-            FROM
-                features AS fts
-            WHERE
-                    fts.geom && %v
-                AND
-                    ST_Intersects(
-                        fts.geom,
-                        %v
-                    )
-        ) AS q;
-    `, layer_name, bbox, bbox, bbox)
-
-	// logger.Debug(query)
-
-	row := db.QueryRow(query)
-
-	err = row.Scan(&tile)
 	if nil != err {
-		return tile, err
+		logger.Error(err)
+	}
+
+	return result, err
+}
+
+func fetchLayerFromDatabase(layer_name string) (string, error) {
+	var result string
+	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+		if nil != err {
+			return err
+		}
+		query := fmt.Sprintf(`
+			SELECT
+				row_to_json(c)
+			FROM (
+				SELECT
+					ST_AsGeoJSON(ST_Extent(geom)) AS extent,
+					-- ST_AsGeoJSON(ST_Envelope(ST_Extent(geom))) AS envelope,
+					count(*) AS features
+				FROM %v
+		 	) c;
+		`, layer_name)
+		row := db.QueryRow(query)
+		return row.Scan(&result)
+	})
+
+	if nil != err {
+		logger.Error(err)
+	}
+
+	return result, err
+}
+
+func fetchTileFromDatabase(layer_name string, x, y, z int) ([]uint8, error) {
+	var tile []uint8
+	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+		// https://blog.jawg.io/how-to-make-mvt-with-postgis/
+		bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
+		query := fmt.Sprintf(`
+			WITH features AS (
+				SELECT
+					row_to_json(lyr)::jsonb - 'geom' AS properties,
+					ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
+				FROM
+					%v AS lyr
+			)
+
+			SELECT
+				ST_AsMVT(q, 'layer', 4096, 'geom')
+			FROM (
+				SELECT
+					fts.properties,
+					ST_AsMvtGeom(
+						fts.geom,
+						%v,
+						4096,
+						256,
+						true
+					) AS geom
+				FROM
+					features AS fts
+				WHERE
+						fts.geom && %v
+					AND
+						ST_Intersects(
+							fts.geom,
+							%v
+						)
+			) AS q;
+		`, layer_name, bbox, bbox, bbox)
+
+		row := db.QueryRow(query)
+		return row.Scan(&tile)
+	})
+
+	if nil != err {
+		logger.Error(err)
 	}
 
 	return tile, nil

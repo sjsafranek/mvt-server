@@ -1,0 +1,11 @@
+title = "MVT-Server"
+
+[server]
+  Port = 5555
+
+[database]
+  Type = "postgres"
+  Database = "geodev"
+  Password = "dev"
+  Username = "geodev"
+  Host = "localhost"
