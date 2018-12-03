@@ -44,7 +44,37 @@
 
 				var lyrId = layers[i].layer_name;
 
-				var layer = L.vectorGrid.protobuf("http://localhost:5555/api/v1/layer/"+lyrId+"/tile/{z}/{x}/{y}.mvt", {
+				var layer = L.vectorGrid.protobuf("http://localhost:5555/api/v1/layer/"+lyrId+"/tile/{z}/{x}/{y}.mvt?filter={filter}", {
+					filter: function(){
+						var zoom = this.map.getZoom();
+						switch(zoom) {
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							filter = "WHERE frc IN ('0')";
+							break;
+						case 9:
+						case 10:
+							filter = "WHERE frc IN ('0', '1')";
+							break;
+						case 11:
+						case 12:
+							filter = "WHERE frc IN ('0', '1', '2')";
+							break;
+						case 13:
+							filter = "WHERE frc IN ('0', '1', '2', '3')";
+							break;
+						default:
+							filter = "";
+						}
+						return filter;
+					},
 					interactive: true,
 					getFeatureId: function(feature) {
 						return feature.properties.xdsegid;

@@ -6,6 +6,7 @@ import (
 	"os"
 	"errors"
 
+	"github.com/sjsafranek/goutils/hashers"
 	"github.com/paulmach/orb/maptile"
 )
 
@@ -26,10 +27,11 @@ type Tile struct {
 	Z       uint32
 	MapTile maptile.Tile
 	MVT     []uint8
+	Filter string
 }
 
 func (self *Tile) getTileName() string {
-	return fmt.Sprintf("%v/%v/%v/%v.mvt", self.Layer, self.Z, self.X, self.Y)
+	return fmt.Sprintf("%v/%v/%v/%v_%v.mvt", self.Layer, self.Z, self.X, self.Y, hashers.MD5HashString(self.Filter))
 }
 
 func (self *Tile) isEmpty() bool {
@@ -55,7 +57,7 @@ func (self *Tile) Fetch() ([]uint8, error) {
 		return tileData, err
 	}
 
-	tileData, err = fetchTileFromDatabase(self.Layer, self.X, self.Y, self.Z)
+	tileData, err = fetchTileFromDatabase(self.Layer, self.X, self.Y, self.Z, self.Filter)
 	if nil != err {
 		logger.Error(err)
 		return tileData, err

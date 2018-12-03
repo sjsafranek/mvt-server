@@ -43,7 +43,14 @@ func VectorTileHandler(w http.ResponseWriter, r *http.Request) {
 		x, _ := strconv.ParseUint(vars["x"], 10, 64)
 		y, _ := strconv.ParseUint(vars["y"], 10, 64)
 
+		filter := ""
+		filters, ok := r.URL.Query()["filter"]
+		if ok {
+			filter = filters[0]
+		}
+
 		tile := NewTile(layer_name, uint32(x), uint32(y), uint32(z))
+		tile.Filter = filter
 		tileData, err := tile.Fetch()
 		if nil != err {
 			jsonHttpResponse(w, 500, err.Error())

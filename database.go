@@ -74,34 +74,34 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 	return result, err
 }
 
-func getFrcStylesheetHACK(z uint32) string {
-	switch {
-	case z < 7:
-		return `
-			WHERE
-				frc IN ('0')
-		`
-	case z < 8:
-		return `
-			WHERE
-				frc IN ('0', '1')
-		`
-	case z < 10:
-		return `
-			WHERE
-				frc IN ('0', '1', '2')
-		`
-	case z < 12:
-		return `
-			WHERE
-				frc IN ('0', '1', '2', '3')
-		`
-	default:
-		return ""
-	}
-}
+// func getFrcStylesheetHACK(z uint32) string {
+// 	switch {
+// 	case z < 7:
+// 		return `
+// 			WHERE
+// 				frc IN ('0')
+// 		`
+// 	case z < 8:
+// 		return `
+// 			WHERE
+// 				frc IN ('0', '1')
+// 		`
+// 	case z < 10:
+// 		return `
+// 			WHERE
+// 				frc IN ('0', '1', '2')
+// 		`
+// 	case z < 12:
+// 		return `
+// 			WHERE
+// 				frc IN ('0', '1', '2', '3')
+// 		`
+// 	default:
+// 		return ""
+// 	}
+// }
 
-func fetchTileFromDatabase(layer_name string, x, y, z uint32) ([]uint8, error) {
+func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]uint8, error) {
 	var tile []uint8
 
 	layer_name = strings.ToLower(layer_name)
@@ -117,10 +117,8 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32) ([]uint8, error) {
 					ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
 				FROM
 					"%v" AS lyr
-
-				-- TODO: stylesheet?
+				-- client side filter... stylesheet?
 				%v
-
 			)
 
 			SELECT
@@ -145,7 +143,9 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32) ([]uint8, error) {
 							%v
 						)
 			) AS q;
-		`, layer_name, getFrcStylesheetHACK(z), bbox, bbox, bbox)
+		`, layer_name, filter, bbox, bbox, bbox)
+
+		// logger.Info(query)
 
 		row := db.QueryRow(query)
 		return row.Scan(&tile)
