@@ -46,7 +46,7 @@
 
 				var layer = L.vectorGrid.protobuf("http://localhost:5555/api/v1/layer/"+lyrId+"/tile/{z}/{x}/{y}.mvt?filter={filter}", {
 					filter: function(){
-						var zoom = this.map.getZoom();
+						var zoom = map.getZoom();
 						switch(zoom) {
 						case 0:
 						case 1:
