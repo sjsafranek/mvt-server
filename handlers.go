@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"errors"
 	// "strings"
 	"time"
 
@@ -82,6 +83,13 @@ func LayersHandler(w http.ResponseWriter, r *http.Request) {
 func LayerHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	layer_name := vars["layer_name"]
+
+	if !layerExists(layer_name) {
+		err := errors.New("Layer not found")
+		jsonHttpResponse(w, 404, err.Error())
+		return
+	}
+
 	layer, err := fetchLayerFromDatabase(layer_name)
 	if nil != err {
 		jsonHttpResponse(w, 500, err.Error())

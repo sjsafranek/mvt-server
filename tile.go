@@ -40,7 +40,7 @@ func (self *Tile) isEmpty() bool {
 
 func (self *Tile) Fetch() ([]uint8, error) {
 
-	if _, ok := LAYERS[self.Layer]; !ok {
+	if !layerExists(self.Layer) {
 		return emptyTile, errors.New("Layer not found")
 	}
 

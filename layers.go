@@ -52,3 +52,11 @@ func loadLayerMetadata() {
 	}
 
 }
+
+func layerExists(layer_name string) bool {
+	// if _, ok := LAYERS[self.Layer]; !ok {
+	// 	return emptyTile, errors.New("Layer not found")
+	// }
+	_, ok := LAYERS[layer_name];
+	return ok
+}
