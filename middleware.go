@@ -17,7 +17,6 @@ func (self *LoggingResponseWriter) WriteHeader(code int) {
 	self.ResponseWriter.WriteHeader(code)
 }
 
-
 func LoggingMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

@@ -1,17 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"errors"
 
-	"github.com/sjsafranek/goutils/hashers"
 	"github.com/paulmach/orb/maptile"
+	"github.com/sjsafranek/goutils/hashers"
 )
 
 var (
-	cacheDir = "cache"
+	cacheDir  = "cache"
 	emptyTile = []uint8{}
 )
 
@@ -27,7 +27,7 @@ type Tile struct {
 	Z       uint32
 	MapTile maptile.Tile
 	MVT     []uint8
-	Filter string
+	Filter  string
 }
 
 func (self *Tile) getTileName() string {
