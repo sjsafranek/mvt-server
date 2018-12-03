@@ -2,10 +2,13 @@ package main
 
 import (
 	"net/http"
+	"time"
 )
 
 func LoggingMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
 		// before
 		logger.Debugf(" In %v %v %v", r.RemoteAddr, r.Method, r.URL)
 
@@ -13,7 +16,8 @@ func LoggingMiddleWare(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 
 		// end
-		logger.Debugf("Out %v %v %v %v", r.RemoteAddr, r.Method, r.URL, w.Header())
+		// logger.Debugf("Out %v %v %v %v", r.RemoteAddr, r.Method, r.URL, w.Header())
+		logger.Debugf("Out %v %v %v %v", r.RemoteAddr, r.Method, r.URL, time.Since(start))
 	})
 }
 

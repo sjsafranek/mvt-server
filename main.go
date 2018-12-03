@@ -59,10 +59,12 @@ func main() {
 	switch ACTION {
 	case "web":
 
+		loadLayerMetadata()
+
 		router := mux.NewRouter()
-		router.HandleFunc("/v1/layers", LayersHandler).Methods("GET")
-		router.HandleFunc("/v1/layer/{layer_name}", LayerHandler).Methods("GET")
-		router.HandleFunc("/v1/tile/{layer_name}/{z:[0-9]+}/{x:[0-9]+}/{y:[0-9]+}.mvt", VectorTileHandler).Methods("GET")
+		router.HandleFunc("/api/v1/layers", LayersHandler).Methods("GET")
+		router.HandleFunc("/api/v1/layer/{layer_name}", LayerHandler).Methods("GET")
+		router.HandleFunc("/api/v1/layer/{layer_name}/tile/{z:[0-9]+}/{x:[0-9]+}/{y:[0-9]+}.mvt", VectorTileHandler).Methods("GET")
 
 		router.Use(LoggingMiddleWare, SetHeadersMiddleWare)
 

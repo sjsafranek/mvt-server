@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -45,6 +46,9 @@ func fetchLayersFromDatabase() (string, error) {
 
 func fetchLayerFromDatabase(layer_name string) (string, error) {
 	var result string
+
+	layer_name = strings.ToLower(layer_name)
+
 	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
 		if nil != err {
 			return err
@@ -54,10 +58,9 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 				row_to_json(c)
 			FROM (
 				SELECT
-					ST_AsGeoJSON(ST_Extent(geom)) AS extent,
-					-- ST_AsGeoJSON(ST_Envelope(ST_Extent(geom))) AS envelope,
+					ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
 					count(*) AS features
-				FROM %v
+				FROM "%v"
 		 	) c;
 		`, layer_name)
 		row := db.QueryRow(query)
@@ -71,18 +74,53 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 	return result, err
 }
 
-func fetchTileFromDatabase(layer_name string, x, y, z int) ([]uint8, error) {
+func getFrcStylesheetHACK(z uint32) string {
+	switch {
+	case z < 7:
+		return `
+			WHERE
+				frc IN ('0')
+		`
+	case z < 8:
+		return `
+			WHERE
+				frc IN ('0', '1')
+		`
+	case z < 10:
+		return `
+			WHERE
+				frc IN ('0', '1', '2')
+		`
+	case z < 12:
+		return `
+			WHERE
+				frc IN ('0', '1', '2', '3')
+		`
+	default:
+		return ""
+	}
+}
+
+func fetchTileFromDatabase(layer_name string, x, y, z uint32) ([]uint8, error) {
 	var tile []uint8
+
+	layer_name = strings.ToLower(layer_name)
+
 	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
 		// https://blog.jawg.io/how-to-make-mvt-with-postgis/
 		bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
+
 		query := fmt.Sprintf(`
 			WITH features AS (
 				SELECT
 					row_to_json(lyr)::jsonb - 'geom' AS properties,
 					ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
 				FROM
-					%v AS lyr
+					"%v" AS lyr
+
+				-- TODO: stylesheet?
+				%v
+
 			)
 
 			SELECT
@@ -107,7 +145,7 @@ func fetchTileFromDatabase(layer_name string, x, y, z int) ([]uint8, error) {
 							%v
 						)
 			) AS q;
-		`, layer_name, bbox, bbox, bbox)
+		`, layer_name, getFrcStylesheetHACK(z), bbox, bbox, bbox)
 
 		row := db.QueryRow(query)
 		return row.Scan(&tile)
