@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/sjsafranek/ligneous"
@@ -76,9 +77,11 @@ func main() {
 		}
 
 	case "upload":
+		// TODO: check for errors...
 		shapefile := os.Args[2]
 		description := os.Args[3]
-		res, err := UploadShapefile(shapefile, description)
+		srid, _ := strconv.ParseInt(os.Args[4], 10, 64)
+		res, err := UploadShapefile(shapefile, description, srid)
 		if err != nil {
 			panic(err)
 		}

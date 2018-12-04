@@ -10,14 +10,14 @@ import (
 	"github.com/sjsafranek/goutils/shell"
 )
 
-func UploadShapefile(shapefile, description string) (string, error) {
+func UploadShapefile(shapefile, description string, srid int64) (string, error) {
 	tableName := strings.Split(filepath.Base(shapefile), ".")[0]
 
 	psql_connect := fmt.Sprintf(`PGPASSWORD=%v psql -d %v -U %v`, config.Database.Password, config.Database.Database, config.Database.Username)
 	import_shapefile := fmt.Sprintf(`shp2pgsql -I "%v" "%v" | %v`, shapefile, tableName, psql_connect)
 	create_layer := fmt.Sprintf(`%v -c "
-        INSERT INTO layers (layer_name, description) VALUES ('%v', '%v')
-    "`, psql_connect, tableName, description)
+        INSERT INTO layers (layer_name, description, srid) VALUES ('%v', '%v', %v)
+    "`, psql_connect, strings.ToLower(tableName), description, srid)
 
 	// bash script contents
 	script := fmt.Sprintf(`

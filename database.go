@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -47,6 +48,7 @@ func fetchLayersFromDatabase() (string, error) {
 func fetchLayerFromDatabase(layer_name string) (string, error) {
 	var result string
 
+	// normalize
 	layer_name = strings.ToLower(layer_name)
 
 	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
@@ -55,14 +57,17 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 		}
 		query := fmt.Sprintf(`
 			SELECT
-				row_to_json(c)
+				row_to_json(c)::jsonb || row_to_json(lyrs.*)::jsonb
 			FROM (
 				SELECT
 					ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
 					count(*) AS features
 				FROM "%v"
-		 	) c;
-		`, layer_name)
+		 	) c
+			JOIN
+				layers AS lyrs
+					ON layer_name = '%v';
+		`, layer_name, layer_name)
 		row := db.QueryRow(query)
 		return row.Scan(&result)
 	})
@@ -74,39 +79,18 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 	return result, err
 }
 
-// func getFrcStylesheetHACK(z uint32) string {
-// 	switch {
-// 	case z < 7:
-// 		return `
-// 			WHERE
-// 				frc IN ('0')
-// 		`
-// 	case z < 8:
-// 		return `
-// 			WHERE
-// 				frc IN ('0', '1')
-// 		`
-// 	case z < 10:
-// 		return `
-// 			WHERE
-// 				frc IN ('0', '1', '2')
-// 		`
-// 	case z < 12:
-// 		return `
-// 			WHERE
-// 				frc IN ('0', '1', '2', '3')
-// 		`
-// 	default:
-// 		return ""
-// 	}
-// }
-
 func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]uint8, error) {
 	var tile []uint8
 
+	layer, err := LAYERS.GetLayer(layer_name)
+	if nil != err {
+		return tile, errors.New("Layer not found")
+	}
+	srid := layer.SRID
+
 	layer_name = strings.ToLower(layer_name)
 
-	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+	err = executeDatabaseQuery(func(db *sql.DB, err error) error {
 		// https://blog.jawg.io/how-to-make-mvt-with-postgis/
 		bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
 
@@ -114,7 +98,8 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 			WITH features AS (
 				SELECT
 					row_to_json(lyr)::jsonb - 'geom' AS properties,
-					ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
+					-- ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
+					ST_Transform( ST_SetSRID(lyr.geom, %v), 3857) AS geom
 				FROM
 					"%v" AS lyr
 				-- client side filter... stylesheet?
@@ -143,9 +128,7 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 							%v
 						)
 			) AS q;
-		`, layer_name, filter, bbox, bbox, bbox)
-
-		// logger.Info(query)
+		`, srid, layer_name, filter, bbox, bbox, bbox)
 
 		row := db.QueryRow(query)
 		return row.Scan(&tile)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,14 +35,10 @@ func (self *Tile) getTileName() string {
 }
 
 func (self *Tile) isEmpty() bool {
-	return !self.MapTile.Bound().Intersects(LAYERS[self.Layer])
+	return !self.MapTile.Bound().Intersects(LAYERS[self.Layer].Extent.Geometry().Bound())
 }
 
 func (self *Tile) Fetch() ([]uint8, error) {
-
-	if !layerExists(self.Layer) {
-		return emptyTile, errors.New("Layer not found")
-	}
 
 	tileName := self.getTileName()
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -38,10 +39,16 @@ func VectorTileHandler(w http.ResponseWriter, r *http.Request) {
 		queue <- true
 
 		vars := mux.Vars(r)
-		layer_name := vars["layer_name"]
 		z, _ := strconv.ParseUint(vars["z"], 10, 64)
 		x, _ := strconv.ParseUint(vars["x"], 10, 64)
 		y, _ := strconv.ParseUint(vars["y"], 10, 64)
+
+		layer_name := strings.ToLower(vars["layer_name"])
+		if !LAYERS.LayerExists(layer_name) {
+			err := errors.New("Layer not found")
+			jsonHttpResponse(w, 404, err.Error())
+			return queue
+		}
 
 		filter := ""
 		filters, ok := r.URL.Query()["filter"]
@@ -81,9 +88,9 @@ func LayersHandler(w http.ResponseWriter, r *http.Request) {
 
 func LayerHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	layer_name := vars["layer_name"]
 
-	if !layerExists(layer_name) {
+	layer_name := strings.ToLower(vars["layer_name"])
+	if !LAYERS.LayerExists(layer_name) {
 		err := errors.New("Layer not found")
 		jsonHttpResponse(w, 404, err.Error())
 		return

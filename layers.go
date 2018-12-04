@@ -2,25 +2,48 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 
-	"github.com/paulmach/orb"
+	// "github.com/paulmach/orb"
 	"github.com/paulmach/orb/geojson"
 )
 
 var (
-	LAYERS map[string]orb.Bound
+	LAYERS Layers
 )
 
+type Layers map[string]LayerMetadata
+
+func (self *Layers) LayerExists(layer_name string) bool {
+	_, ok := LAYERS[layer_name]
+	return ok
+}
+
+func (self *Layers) GetLayer(layer_name string) (LayerMetadata, error) {
+	layer, ok := LAYERS[layer_name]
+	if !ok {
+		return layer, errors.New("Layer not found")
+	}
+	return layer, nil
+}
+
 type LayerMetadata struct {
-	Extent   geojson.Polygon `json:"extent"`
-	Features int             `json:"features"`
+	Extent      geojson.Polygon `json:"extent"`
+	Features    int             `json:"features"`
+	SRID        int64           `json:"srid"`
+	LayerId     string          `json:"layer_id"`
+	CreatedAt   string          `json:"created_at"`
+	IsDeleted   bool            `"is_deleted"`
+	LayerName   string          `json:"layer_name"`
+	UpdatedAt   string          `json:"updated_at"`
+	Description string          `json:"description"`
 }
 
 // loadLayerMetadata loads layer bounds from database
 func loadLayerMetadata() {
 	logger.Debug("Loading layer metadata")
 
-	LAYERS = make(map[string]orb.Bound)
+	LAYERS = Layers{}
 
 	var layers []map[string]interface{}
 	res, err := fetchLayersFromDatabase()
@@ -37,23 +60,18 @@ func loadLayerMetadata() {
 		layer_name := layers[i]["layer_name"].(string)
 		logger.Debugf("Fetch %v metadata", layer_name)
 
-		var layer LayerMetadata
+		var lyrMetadata LayerMetadata
 		res, err = fetchLayerFromDatabase(layer_name)
 		if nil != err {
 			panic(err)
 		}
 
-		err = json.Unmarshal([]byte(res), &layer)
+		err = json.Unmarshal([]byte(res), &lyrMetadata)
 		if nil != err {
 			panic(err)
 		}
 
-		LAYERS[layer_name] = layer.Extent.Geometry().Bound()
+		LAYERS[layer_name] = lyrMetadata
 	}
 
-}
-
-func layerExists(layer_name string) bool {
-	_, ok := LAYERS[layer_name]
-	return ok
 }

@@ -27,6 +27,7 @@ CREATE EXTENSION pgcrypto;
 CREATE TABLE IF NOT EXISTS layers (
     layer_name VARCHAR NOT NULL UNIQUE,
     layer_id VARCHAR NOT NULL UNIQUE DEFAULT md5(random()::text || now()::text)::uuid,
+    srid INTEGER NOT NULL DEFAULT 4269,
     description VARCHAR,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_at TIMESTAMP DEFAULT current_timestamp,
