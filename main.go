@@ -36,11 +36,6 @@ func init() {
 	flag.BoolVar(&print_version, "V", false, "Print version and exit")
 	flag.Parse()
 
-	// if flag.NArg() == 0 {
-	//     flag.Usage()
-	//     os.Exit(1)
-	// }
-
 	if print_version {
 		fmt.Println(PROJECT, VERSION)
 		os.Exit(0)
@@ -50,12 +45,6 @@ func init() {
 	if nil != err {
 		panic(err)
 	}
-
-	// if !strings.Contains(os.Args[1], "-") {
-	// 	if 2 <= len(os.Args) {
-	// 		ACTION = os.Args[1]
-	// 	}
-	// }
 }
 
 func main() {
@@ -81,17 +70,17 @@ func main() {
 
 	case "upload":
 		// TODO: check for errors...
-		if 6 != len(os.Args) {
-			fmt.Println(len(os.Args))
-			fmt.Println(os.Args)
-			fmt.Println("Incorrect usage: upload <shapefile> <tablename> <description> <srid>")
+		if 4 != len(flag.Args()) {
+			fmt.Println(flag.Args())
+			fmt.Println("Incorrect usage: <shapefile> <tablename> <description> <srid>")
 			return
 		}
 
-		shapefile := os.Args[2]
-		tablename := os.Args[3]
-		description := os.Args[4]
-		srid, _ := strconv.ParseInt(os.Args[5], 10, 64)
+		args := flag.Args()
+		shapefile := args[0]
+		tablename := args[1]
+		description := args[2]
+		srid, _ := strconv.ParseInt(args[3], 10, 64)
 		res, err := UploadShapefile(shapefile, tablename, description, srid)
 		if err != nil {
 			panic(err)

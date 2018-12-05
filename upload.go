@@ -20,6 +20,7 @@ func UploadShapefile(shapefile, tablename, description string, srid int64) (stri
 	// bash script contents
 	script := fmt.Sprintf(`
 #!/bin/bash
+set -xe
 
 %v
 %v

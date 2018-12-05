@@ -63,7 +63,11 @@ func loadLayerMetadata() {
 		var lyrMetadata LayerMetadata
 		res, err = fetchLayerFromDatabase(layer_name)
 		if nil != err {
-			panic(err)
+			logger.Error(err)
+			logger.Warnf("Marking layer %v as deleted", layer_name)
+			deleteLayerFromDatabase(layer_name)
+			// panic(err)
+			continue
 		}
 
 		err = json.Unmarshal([]byte(res), &lyrMetadata)

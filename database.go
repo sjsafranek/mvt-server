@@ -45,6 +45,30 @@ func fetchLayersFromDatabase() (string, error) {
 	return result, err
 }
 
+func deleteLayerFromDatabase(layer_name string) error {
+	// normalize
+	layer_name = strings.ToLower(layer_name)
+
+	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+		if nil != err {
+			return err
+		}
+		query := fmt.Sprintf(`
+			UPDATE layers
+				SET is_deleted='t'
+			 	WHERE layer_name = '%v';
+		`, layer_name)
+		_, err = db.Exec(query)
+		return err
+	})
+
+	if nil != err {
+		logger.Error(err)
+	}
+
+	return err
+}
+
 func fetchLayerFromDatabase(layer_name string) (string, error) {
 	var result string
 
