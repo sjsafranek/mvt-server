@@ -35,7 +35,7 @@ func (self *Tile) getTileName() string {
 }
 
 func (self *Tile) isEmpty() bool {
-	layer, err := LAYERS.getLayer(self.Layer)
+	layer, err := LAYERS.GetLayer(self.Layer)
 	if nil != err {
 		return true
 	}

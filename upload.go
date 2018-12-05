@@ -4,20 +4,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/sjsafranek/goutils/shell"
 )
 
-func UploadShapefile(shapefile, description string, srid int64) (string, error) {
-	tableName := strings.Split(filepath.Base(shapefile), ".")[0]
+func UploadShapefile(shapefile, tablename, description string, srid int64) (string, error) {
 
 	psql_connect := fmt.Sprintf(`PGPASSWORD=%v psql -d %v -U %v`, config.Database.Password, config.Database.Database, config.Database.Username)
-	import_shapefile := fmt.Sprintf(`shp2pgsql -I "%v" "%v" | %v`, shapefile, tableName, psql_connect)
+	import_shapefile := fmt.Sprintf(`shp2pgsql -I "%v" "%v" | %v`, shapefile, tablename, psql_connect)
 	create_layer := fmt.Sprintf(`%v -c "
         INSERT INTO layers (layer_name, description, srid) VALUES ('%v', '%v', %v)
-    "`, psql_connect, strings.ToLower(tableName), description, srid)
+    "`, psql_connect, strings.ToLower(tablename), description, srid)
 
 	// bash script contents
 	script := fmt.Sprintf(`

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	// "errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -48,10 +48,6 @@ func init() {
 
 	if 2 <= len(os.Args) {
 		ACTION = os.Args[1]
-		if "web" != ACTION && "upload" != ACTION {
-			panic(errors.New("Please specifiy action [web(default), upload]"))
-		}
-
 	}
 }
 
@@ -78,17 +74,34 @@ func main() {
 
 	case "upload":
 		// TODO: check for errors...
+		if 5 != len(os.Args) {
+			fmt.Println("Incorrect usage: upload <shapefile> <tablename> <description> <srid>")
+			return
+		}
+
 		shapefile := os.Args[2]
-		description := os.Args[3]
-		srid, _ := strconv.ParseInt(os.Args[4], 10, 64)
-		res, err := UploadShapefile(shapefile, description, srid)
+		tablename := os.Args[3]
+		description := os.Args[4]
+		srid, _ := strconv.ParseInt(os.Args[5], 10, 64)
+		res, err := UploadShapefile(shapefile, tablename, description, srid)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Println(res)
 
 	default:
-		panic(errors.New("Please specifiy action [web(default), upload]"))
+		fmt.Printf(`Invalid option.
+
+Usage:
+	%v [action] [options]
+
+Actions:
+	web (default)		Start http server
+	upload			Upload shapefile
+
+Options:
+
+\n`, os.Args[0])
 	}
 
 }
