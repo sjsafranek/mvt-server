@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -31,10 +30,16 @@ var (
 func init() {
 	var print_version bool
 
-	flag.StringVar(&CONFIG_FILE, "c", DEFAULT_CONFIG_FILE, "Server port")
+	flag.StringVar(&ACTION, "action", DEFAULT_ACTION, "Action")
+	flag.StringVar(&CONFIG_FILE, "c", DEFAULT_CONFIG_FILE, "Config file")
 	flag.IntVar(&PORT, "p", DEFAULT_PORT, "Server port")
 	flag.BoolVar(&print_version, "V", false, "Print version and exit")
 	flag.Parse()
+
+	// if flag.NArg() == 0 {
+	//     flag.Usage()
+	//     os.Exit(1)
+	// }
 
 	if print_version {
 		fmt.Println(PROJECT, VERSION)
@@ -46,9 +51,11 @@ func init() {
 		panic(err)
 	}
 
-	if 2 <= len(os.Args) {
-		ACTION = os.Args[1]
-	}
+	// if !strings.Contains(os.Args[1], "-") {
+	// 	if 2 <= len(os.Args) {
+	// 		ACTION = os.Args[1]
+	// 	}
+	// }
 }
 
 func main() {
