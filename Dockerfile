@@ -1,6 +1,6 @@
-FROM mdillon/postgis
+FROM debian:9
 
-RUN apt-get update && apt-get install -y wget git sudo
+RUN apt-get update && apt-get install -y wget git sudo postgresql postgis
 
 RUN wget -q https://dl.google.com/go/go1.11.2.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.11.2.linux-amd64.tar.gz

@@ -74,7 +74,9 @@ func main() {
 
 	case "upload":
 		// TODO: check for errors...
-		if 5 != len(os.Args) {
+		if 6 != len(os.Args) {
+			fmt.Println(len(os.Args))
+			fmt.Println(os.Args)
 			fmt.Println("Incorrect usage: upload <shapefile> <tablename> <description> <srid>")
 			return
 		}

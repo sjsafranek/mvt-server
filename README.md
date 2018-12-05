@@ -7,7 +7,7 @@ PostGreSQL 11
 Go 11
 
 
-./mvt-server upload data/USA-NewYorkCity.shp 'usa-newyorkcity-12-04-2018' 'inrix usa nyc roads' 4269
+./mvt-server upload data/USA-NewYorkCity.shp 'usa-newyorkcity-12-04-2018' 'usa nyc roads' 4269
 
 
 go get github.com/gorilla/mux
@@ -17,6 +17,8 @@ go get github.com/pelletier/go-toml
 go get github.com/sjsafranek/goutils/hashers
 go get github.com/sjsafranek/goutils/shell
 go get github.com/sjsafranek/ligneous
+
+
 
 
 
