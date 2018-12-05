@@ -1,6 +1,6 @@
 FROM mdillon/postgis
 
-RUN apt-get update && apt-get install -y wget git
+RUN apt-get update && apt-get install -y wget git sudo
 
 RUN wget -q https://dl.google.com/go/go1.11.2.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.11.2.linux-amd64.tar.gz
@@ -15,10 +15,10 @@ RUN /usr/local/go/bin/go get github.com/sjsafranek/goutils/shell
 RUN /usr/local/go/bin/go get github.com/sjsafranek/ligneous
 
 RUN git clone https://github.com/sjsafranek/mvt-server.git
-RUN psql -c "CREATE USER geodev WITH PASSWORD 'dev'"
-RUN psql -c "CREATE DATABASE geodev"
-RUN psql -c "GRANT ALL PRIVILEGES ON DATABASE geodev to geodev"
-RUN psql -c "ALTER USER geodev WITH SUPERUSER"
+RUN sudo -u postgres psql -c "CREATE USER geodev WITH PASSWORD 'dev'"
+RUN sudo -u postgres psql -c "CREATE DATABASE geodev"
+RUN sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE geodev to geodev"
+RUN sudo -u postgres psql -c "ALTER USER geodev WITH SUPERUSER"
 
 RUN PGPASSWORD=dev psql -d geodev -U geodev -f mvt-server/scripts/database.sql
 
