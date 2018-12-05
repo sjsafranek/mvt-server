@@ -35,7 +35,11 @@ func (self *Tile) getTileName() string {
 }
 
 func (self *Tile) isEmpty() bool {
-	return !self.MapTile.Bound().Intersects(LAYERS[self.Layer].Extent.Geometry().Bound())
+	layer, err := LAYERS.getLayer(self.Layer)
+	if nil != err {
+		return true
+	}
+	return !self.MapTile.Bound().Intersects(layer.Extent.Geometry().Bound())
 }
 
 func (self *Tile) Fetch() ([]uint8, error) {

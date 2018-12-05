@@ -33,7 +33,7 @@ type LayerMetadata struct {
 	SRID        int64           `json:"srid"`
 	LayerId     string          `json:"layer_id"`
 	CreatedAt   string          `json:"created_at"`
-	IsDeleted   bool            `"is_deleted"`
+	IsDeleted   bool            `json:"is_deleted"`
 	LayerName   string          `json:"layer_name"`
 	UpdatedAt   string          `json:"updated_at"`
 	Description string          `json:"description"`
