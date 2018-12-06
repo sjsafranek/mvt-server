@@ -46,7 +46,12 @@ func init() {
 
 	err := config.Fetch(CONFIG_FILE)
 	if nil != err {
-		panic(err)
+		logger.Warn(err)
+		logger.Info("Using default config settings")
+		err = config.UseDefaults()
+		if nil != err {
+			panic(err)
+		}
 	}
 
 	signal_queue := make(chan os.Signal)

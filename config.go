@@ -5,19 +5,46 @@ import (
 	"io/ioutil"
 
 	"github.com/pelletier/go-toml"
+	"github.com/sjsafranek/goutils"
+)
+
+const (
+	DEFAULT_DATABASE_ENGINE   = "postgres"
+	DEFAULT_DATABASE_DATABASE = "geodev"
+	DEFAULT_DATABASE_PASSWORD = "dev"
+	DEFAULT_DATABASE_USERNAME = "geodev"
+	DEFAULT_DATABASE_HOST     = "localhost"
 )
 
 type Config struct {
 	Title    string         `toml:"title"`
+	Server   ServerConfig   `toml:"server"`
 	Database DatabaseConfig `toml:"database"`
 }
 
+type ServerConfig struct {
+	Port   int    `toml:"port"`
+	Secret string `toml:"secret"`
+}
+
 type DatabaseConfig struct {
-	Type     string `toml:"Type"`
-	Database string `toml:"Database"`
-	Password string `toml:"Password"`
-	Username string `toml:"Username"`
-	Host     string `toml:"Host"`
+	Type     string `toml:"type"`
+	Database string `toml:"database"`
+	Password string `toml:"password"`
+	Username string `toml:"username"`
+	Host     string `toml:"host"`
+}
+
+func (self *Config) UseDefaults() error {
+	self.Title = "MVT-Server"
+	self.Server.Port = DEFAULT_PORT
+	self.Server.Secret = utils.RandomString(10)
+	self.Database.Type = DEFAULT_DATABASE_ENGINE
+	self.Database.Database = DEFAULT_DATABASE_DATABASE
+	self.Database.Password = DEFAULT_DATABASE_PASSWORD
+	self.Database.Username = DEFAULT_DATABASE_USERNAME
+	self.Database.Host = DEFAULT_DATABASE_HOST
+	return self.Save("config.toml")
 }
 
 func (self *Config) Fetch(file string) error {
