@@ -47,13 +47,13 @@ func (self *Tile) Fetch() ([]uint8, error) {
 	tileName := self.getTileName()
 
 	if self.isEmpty() {
-		logger.Infof("Empty tile %v - 0 bytes", tileName)
+		logger.Infof("Empty tile %v", tileName)
 		return emptyTile, nil
 	}
 
 	tileData, err := self.fetchTileFromCache()
 	if nil == err {
-		logger.Infof("Got tile %v from cache - %v bytes", tileName, len(tileData))
+		logger.Infof("Got tile %v from cache", tileName)
 		return tileData, err
 	}
 
@@ -63,7 +63,7 @@ func (self *Tile) Fetch() ([]uint8, error) {
 		return tileData, err
 	}
 
-	logger.Infof("Got tile %v from database - %v bytes", tileName, len(tileData))
+	logger.Infof("Got tile %v from database", tileName)
 	go self.cacheTile(tileData)
 
 	return tileData, err
