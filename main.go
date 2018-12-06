@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sjsafranek/ligneous"
@@ -45,6 +48,19 @@ func init() {
 	if nil != err {
 		panic(err)
 	}
+
+	signal_queue := make(chan os.Signal)
+	signal.Notify(signal_queue, syscall.SIGTERM)
+	signal.Notify(signal_queue, syscall.SIGINT)
+	go func() {
+		sig := <-signal_queue
+		logger.Warnf("caught sig: %+v", sig)
+		logger.Warn("Gracefully shutting down...")
+		logger.Warn("Shutting down...")
+		time.Sleep(500 * time.Millisecond)
+		os.Exit(0)
+	}()
+
 }
 
 func main() {

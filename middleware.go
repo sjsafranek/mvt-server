@@ -20,14 +20,13 @@ func (self *statusWriter) WriteHeader(code int) {
 }
 
 func (self *statusWriter) Write(b []byte) (int, error) {
-        if self.status == 0 {
-        	self.status = 200
-        }
-        n, err := self.ResponseWriter.Write(b)
-        self.length += n
-        return n, err
+	if self.status == 0 {
+		self.status = 200
+	}
+	n, err := self.ResponseWriter.Write(b)
+	self.length += n
+	return n, err
 }
-
 
 func LoggingMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
