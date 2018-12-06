@@ -162,5 +162,5 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 		logger.Error(err)
 	}
 
-	return tile, nil
+	return tile, err
 }
