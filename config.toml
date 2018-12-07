@@ -4,9 +4,10 @@ title = "MVT-Server"
   database = "geodev"
   host = "localhost"
   password = "dev"
+  port = 5432
   type = "postgres"
   username = "geodev"
 
 [server]
   port = 5555
-  secret = "8XsiSYmH3j"
+  secret = "mSyvKoNpxj"

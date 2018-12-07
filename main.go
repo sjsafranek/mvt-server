@@ -70,6 +70,8 @@ func init() {
 
 func main() {
 
+	logger.Infof("Using database connection: %v", config.Database.ConnectionString())
+
 	switch ACTION {
 
 	case "ls":

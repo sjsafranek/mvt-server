@@ -72,6 +72,20 @@ shp2pgsql -I data/USA-NewYorkCity.shp inrix-usa-newyorkcity-12-04-2018 | PGPASSW
 
 
 
+
+docker-compose up
+psql -h 127.0.0.1 -p 1111 -d geodev -U geodev
+
+
+
+
+
+
+
+
+
+
+
 git clone https://github.com/sjsafranek/mvt-server.git
 
 

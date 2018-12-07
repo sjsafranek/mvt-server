@@ -11,7 +11,7 @@ import (
 
 func UploadShapefile(shapefile, tablename, description string, srid int64) (string, error) {
 
-	psql_connect := fmt.Sprintf(`PGPASSWORD=%v psql -d %v -U %v`, config.Database.Password, config.Database.Database, config.Database.Username)
+	psql_connect := fmt.Sprintf(`PGPASSWORD=%v psql -d %v -U %v -h %v -p %v`, config.Database.Password, config.Database.Database, config.Database.Username, config.Database.Host, config.Database.Port)
 	import_shapefile := fmt.Sprintf(`shp2pgsql -I "%v" "%v" | %v`, shapefile, tablename, psql_connect)
 	create_layer := fmt.Sprintf(`%v -c "
         INSERT INTO layers (layer_name, description, srid) VALUES ('%v', '%v', %v)

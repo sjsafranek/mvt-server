@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+   redis:
+     image: redis
+     networks:
+       - webnet
+   db:
+     image: mdillon/postgis
+     volumes:
+       - ./pgdata:/var/lib/postgresql/data
+     restart: always
+     networks:
+       - webnet
+     ports:
+       - "1111:5432"
+     environment:
+       POSTGRES_USER: geodev
+       POSTGRES_PASSWORD: dev
+       POSTGRES_DB: geodev
+networks:
+  webnet:
