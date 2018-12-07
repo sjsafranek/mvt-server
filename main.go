@@ -82,7 +82,9 @@ func main() {
 		loadLayerMetadata()
 		args := flag.Args()
 		layer := args[0]
-		CookTiles(layer)
+		beginZoom, _ := strconv.ParseUint(args[1], 10, 64)
+		endZoom, _ := strconv.ParseUint(args[2], 10, 64)
+		CookTiles(layer, int(beginZoom), int(endZoom))
 
 	case "web":
 

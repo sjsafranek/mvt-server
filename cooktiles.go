@@ -19,7 +19,7 @@ func tileWorker(layerName string, queue chan xyz, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func CookTiles(layerName string) {
+func CookTiles(layerName string, beginZoom, endZoom int) {
 	bbox := LAYERS[layerName].Extent.Geometry().Bound()
 
 	minlat := bbox.Min[1]
@@ -34,7 +34,7 @@ func CookTiles(layerName string) {
 		go tileWorker(layerName, queue, &wg)
 	}
 
-	for zoom := 0; zoom < 14; zoom++ {
+	for zoom := beginZoom; zoom < endZoom; zoom++ {
 		xyzs := GetTileNamesFromMapView(minlat, maxlat, minlng, maxlng, zoom)
 		for i := range xyzs {
 			queue <- xyzs[i]
