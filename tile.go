@@ -81,6 +81,8 @@ func (self *Tile) cacheTile(tileData []uint8) error {
 	tileDirPath := fmt.Sprintf("%v/%v/%v/%v", cacheDir, self.Layer, self.Z, self.X)
 	tileFile := fmt.Sprintf("%v/%v", cacheDir, tileName)
 
+	logger.Debugf("Writing tile %v to cache", tileName)
+
 	err := os.MkdirAll(tileDirPath, os.ModePerm)
 	if nil != err {
 		panic(err)

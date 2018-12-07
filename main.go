@@ -71,6 +71,19 @@ func init() {
 func main() {
 
 	switch ACTION {
+
+	case "ls":
+		loadLayerMetadata()
+		for layer := range LAYERS {
+			fmt.Println(layer)
+		}
+
+	case "cook":
+		loadLayerMetadata()
+		args := flag.Args()
+		layer := args[0]
+		CookTiles(layer)
+
 	case "web":
 
 		loadLayerMetadata()

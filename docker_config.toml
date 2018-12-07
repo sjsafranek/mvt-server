@@ -1,0 +1,12 @@
+title = "MVT-Server"
+
+[database]
+  database = "postgres"
+  host = "192.168.16.2"
+  password = "dev"
+  type = "postgres"
+  username = "postgres"
+
+[server]
+  port = 5555
+  secret = "8XsiSYmH3j"

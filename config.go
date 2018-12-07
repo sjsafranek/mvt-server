@@ -76,5 +76,5 @@ func (self Config) Marshal() (string, error) {
 }
 
 func (self *DatabaseConfig) ConnectionString() string {
-	return fmt.Sprintf("%v://%v:%v@%v/%v", self.Type, self.Username, self.Password, self.Host, self.Database)
+	return fmt.Sprintf("%v://%v:%v@%v/%v?sslmode=disable", self.Type, self.Username, self.Password, self.Host, self.Database)
 }
