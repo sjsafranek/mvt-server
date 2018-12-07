@@ -18,6 +18,67 @@ func executeDatabaseQuery(f func(*sql.DB, error) error) error {
 	return f(db, err)
 }
 
+func databaseSetup() error {
+	logger.Debug("Setup database...")
+	var result string
+	err := executeDatabaseQuery(func(db *sql.DB, err error) error {
+		if nil != err {
+			return err
+		}
+		query := `
+
+CREATE TABLE IF NOT EXISTS layers (
+    layer_name VARCHAR NOT NULL UNIQUE,
+    layer_id VARCHAR NOT NULL UNIQUE DEFAULT md5(random()::text || now()::text)::uuid,
+    srid INTEGER NOT NULL DEFAULT 4269,
+    description VARCHAR,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp,
+    is_deleted BOOLEAN DEFAULT false,
+    PRIMARY KEY(layer_id)
+);
+
+-- update triggers
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS layers_update ON layers;
+CREATE TRIGGER layers_update BEFORE UPDATE ON layers FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
+-- .end
+
+
+-- https://raw.githubusercontent.com/jawg/blog-resources/master/how-to-make-mvt-with-postgis/bbox.sql
+CREATE OR REPLACE FUNCTION BBox(x integer, y integer, zoom integer)
+    RETURNS geometry AS
+$BODY$
+DECLARE
+    max numeric := 6378137 * pi();
+    res numeric := max * 2 / 2^zoom;
+    bbox geometry;
+BEGIN
+    return ST_MakeEnvelope(
+        -max + (x * res),
+        max - (y * res),
+        -max + (x * res) + res,
+        max - (y * res) - res,
+        3857);
+END;
+$BODY$
+  LANGUAGE plpgsql IMMUTABLE;
+
+		`
+		row := db.QueryRow(query)
+		return row.Scan(&result)
+	})
+
+	return err
+}
+
 func fetchLayersFromDatabase() (string, error) {
 	var result string
 	err := executeDatabaseQuery(func(db *sql.DB, err error) error {

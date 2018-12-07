@@ -78,6 +78,7 @@ func init() {
 func main() {
 
 	logger.Infof("Using database connection: %v", config.Database.ConnectionString())
+	databaseSetup()
 
 	switch ACTION {
 
