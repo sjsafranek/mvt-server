@@ -119,6 +119,8 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 		bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
 
 		query := fmt.Sprintf(`
+			SET work_mem = '2GB';
+
 			WITH features AS (
 				SELECT
 					row_to_json(lyr)::jsonb - 'geom' AS properties,
