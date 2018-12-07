@@ -24,10 +24,11 @@ go get github.com/sjsafranek/ligneous
 ```
 
 
-./mvt-server -action upload data/USA-NewYorkCity.shp 'usa-newyorkcity-12-04-2018' 'usa nyc roads' 4269
-
-./mvt-server -action upload ~/DB4IoT/tiger_shapes/tl_2017_us_county/tl_2017_us_county.shp tl_2017_us_county 'tiger line counties' 4269
-
+./mvt-server -action upload data/tl_2017_us_county/tl_2017_us_county.shp 'tl_2017_us_county' 'tiger line 2017 us counties' 4269
+./mvt-server -action upload data/tl_2017_us_state/tl_2017_us_state.shp 'tl_2017_us_state' 'tiger line 2017 us states' 4269
+./mvt-server -action upload data/tl_2017_us_zcta510/tl_2017_us_zcta510.shp 'tl_2017_us_zcta510' 'tiger line 2017 us zipcodes' 4269
+./mvt-server -action upload data/United_Kingdom.shp 'inrix_united_kingdom_roads_12-04-2018' 'inrix uk road segments' 4269
+./mvt-server -action upload data/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp 'ne_10m_admin_1_states_provinces' 'Natural Earth admin and provinces' 4269
 
 
 ## Docker Database Setup (optional)
@@ -56,3 +57,15 @@ Do srid ST_Transform to 3857 upon insertion
 
 sudo docker inspect mvt-server_db_1_1517c26d31ab
 "Gateway": "172.21.0.1"
+
+
+```bash
+ALTER TABLE "tl_2017_us_zcta510"
+    ALTER COLUMN geom TYPE geometry(MultiPolygon,3857)
+    USING ST_Transform(
+        ST_SetSRID( geom, 4269 )
+        , 3857
+    );
+
+UPDATE LAYERS SET srid=3857 WHERE layer_name = 'tl_2017_us_zcta510';
+```

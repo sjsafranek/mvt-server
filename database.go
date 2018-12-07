@@ -228,6 +228,7 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 
 			if "" != filter {
 				filter = strings.Replace(filter, "WHERE ", "", -1)
+				filter = strings.Replace(filter, "where ", "", -1)
 				filter = fmt.Sprintf("AND %v", filter)
 			}
 
