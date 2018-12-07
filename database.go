@@ -179,7 +179,11 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 		// https://blog.jawg.io/how-to-make-mvt-with-postgis/
 		bbox := fmt.Sprintf("BBox(%v, %v, %v)", x, y, z)
 
-		query := fmt.Sprintf(`
+		query := ""
+
+		// if srid is not 3857 feature geom must be converted
+		if 3857 != srid {
+			query = fmt.Sprintf(`
 			SET work_mem = '2GB';
 
 			WITH features AS (
@@ -216,6 +220,46 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 						)
 			) AS q;
 		`, srid, layer_name, filter, bbox, bbox, bbox)
+
+		}
+
+		//
+		if 3857 == srid {
+
+			if "" != filter {
+				filter = strings.Replace(filter, "WHERE ", "", -1)
+				filter = fmt.Sprintf("AND %v", filter)
+			}
+
+			query = fmt.Sprintf(`
+			SET work_mem = '2GB';
+
+			SELECT
+				ST_AsMVT(q, 'layer', 4096, 'geom')
+			FROM (
+				SELECT
+					row_to_json(fts)::jsonb - 'geom' AS properties,
+					ST_AsMvtGeom(
+						fts.geom,
+						%v,
+						4096,
+						256,
+						true
+					) AS geom
+				FROM
+					"%v" AS fts
+				WHERE
+						fts.geom && %v
+					AND
+						ST_Intersects(
+							fts.geom,
+							%v
+						)
+					%v
+			) AS q;
+		`, bbox, layer_name, bbox, bbox, filter)
+
+		}
 
 		row := db.QueryRow(query)
 		return row.Scan(&tile)
