@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	DEFAULT_DATABASE_ENGINE   = "postgres"
-	DEFAULT_DATABASE_DATABASE = "geodev"
-	DEFAULT_DATABASE_PASSWORD = "dev"
-	DEFAULT_DATABASE_USERNAME = "geodev"
-	DEFAULT_DATABASE_HOST     = "localhost"
+	DEFAULT_DATABASE_ENGINE         = "postgres"
+	DEFAULT_DATABASE_DATABASE       = "geodev"
+	DEFAULT_DATABASE_PASSWORD       = "dev"
+	DEFAULT_DATABASE_USERNAME       = "geodev"
+	DEFAULT_DATABASE_HOST           = "localhost"
+	DEFAULT_DATABASE_PORT     int64 = 5432
 )
 
 var (
@@ -22,6 +23,7 @@ var (
 	DATABASE_PASSWORD = DEFAULT_DATABASE_PASSWORD
 	DATABASE_USERNAME = DEFAULT_DATABASE_USERNAME
 	DATABASE_HOST     = DEFAULT_DATABASE_HOST
+	DATABASE_PORT     = DEFAULT_DATABASE_PORT
 )
 
 type Config struct {
@@ -53,7 +55,9 @@ func (self *Config) UseDefaults() error {
 	self.Database.Password = DATABASE_PASSWORD
 	self.Database.Username = DATABASE_USERNAME
 	self.Database.Host = DATABASE_HOST
-	return self.Save("config.toml")
+	self.Database.Port = DATABASE_PORT
+	// return self.Save("config.toml")
+	return nil
 }
 
 func (self *Config) Fetch(file string) error {
