@@ -36,7 +36,9 @@ func init() {
 	flag.StringVar(&ACTION, "action", DEFAULT_ACTION, "Action")
 	flag.StringVar(&CONFIG_FILE, "c", DEFAULT_CONFIG_FILE, "Config file")
 	flag.IntVar(&PORT, "p", DEFAULT_PORT, "Server port")
+	flag.StringVar(&DATABASE_HOST, "h", DEFAULT_DATABASE_HOST, "database host")
 	flag.BoolVar(&print_version, "V", false, "Print version and exit")
+
 	flag.Parse()
 
 	if print_version {

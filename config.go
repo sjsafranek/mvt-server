@@ -16,6 +16,14 @@ const (
 	DEFAULT_DATABASE_HOST     = "localhost"
 )
 
+var (
+	DATABASE_ENGINE   = DEFAULT_DATABASE_ENGINE
+	DATABASE_DATABASE = DEFAULT_DATABASE_DATABASE
+	DATABASE_PASSWORD = DEFAULT_DATABASE_PASSWORD
+	DATABASE_USERNAME = DEFAULT_DATABASE_USERNAME
+	DATABASE_HOST     = DEFAULT_DATABASE_HOST
+)
+
 type Config struct {
 	Title    string         `toml:"title"`
 	Server   ServerConfig   `toml:"server"`
@@ -40,11 +48,11 @@ func (self *Config) UseDefaults() error {
 	self.Title = "MVT-Server"
 	self.Server.Port = DEFAULT_PORT
 	self.Server.Secret = utils.RandomString(10)
-	self.Database.Type = DEFAULT_DATABASE_ENGINE
-	self.Database.Database = DEFAULT_DATABASE_DATABASE
-	self.Database.Password = DEFAULT_DATABASE_PASSWORD
-	self.Database.Username = DEFAULT_DATABASE_USERNAME
-	self.Database.Host = DEFAULT_DATABASE_HOST
+	self.Database.Type = DATABASE_ENGINE
+	self.Database.Database = DATABASE_DATABASE
+	self.Database.Password = DATABASE_PASSWORD
+	self.Database.Username = DATABASE_USERNAME
+	self.Database.Host = DATABASE_HOST
 	return self.Save("config.toml")
 }
 

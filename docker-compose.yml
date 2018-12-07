@@ -18,5 +18,12 @@ services:
        POSTGRES_USER: geodev
        POSTGRES_PASSWORD: dev
        POSTGRES_DB: geodev
+   web:
+     build: .
+     command: cd mvt-server/ && /usr/local/go/bin/go run *.go
+     ports:
+       - "5555:5555"
+     depends_on:
+       - db
 networks:
   webnet:
