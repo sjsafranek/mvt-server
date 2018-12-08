@@ -140,19 +140,40 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 		if nil != err {
 			return err
 		}
+
+		// query := fmt.Sprintf(`
+		// 	SELECT
+		// 		row_to_json(c)::jsonb || row_to_json(lyrs.*)::jsonb
+		// 	FROM (
+		// 		SELECT
+		// 			-- ST_AsGeoJSON(ST_Extent( ST_Transform( ST_SetSRID(lyr.geom, lyrs.srid), 3857) )) AS geom,
+		// 			ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
+		// 			count(*) AS features
+		// 		FROM "%v"
+		//  	) c
+		// 	JOIN
+		// 		layers AS lyrs
+		// 			ON layer_name = '%v';
+		// `, layer_name, layer_name)
+
 		query := fmt.Sprintf(`
 			SELECT
 				row_to_json(c)::jsonb || row_to_json(lyrs.*)::jsonb
 			FROM (
 				SELECT
-					ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
+			        ST_AsGeoJSON(ST_Extent( ST_Transform( ST_SetSRID(lyr.geom, lyrs.srid), 4269) ))::json AS extent,
+					-- ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
 					count(*) AS features
-				FROM "%v"
+				FROM "%v" AS lyr
+				INNER JOIN
+					layers AS lyrs
+						ON layer_name = '%v'
 		 	) c
 			JOIN
 				layers AS lyrs
 					ON layer_name = '%v';
-		`, layer_name, layer_name)
+		`, layer_name, layer_name, layer_name)
+
 		row := db.QueryRow(query)
 		return row.Scan(&result)
 	})

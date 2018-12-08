@@ -1,10 +1,10 @@
 version: '3.3'
 
 services:
-   redis:
-     image: redis
-     networks:
-       - webnet
+   # redis:
+   #   image: redis
+   #   networks:
+   #     - webnet
    db:
      image: mdillon/postgis
      volumes:
