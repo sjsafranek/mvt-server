@@ -143,14 +143,14 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 
 		query := fmt.Sprintf(`
 			SELECT
-				row_to_json(c)::jsonb
-				-- || row_to_json(lyrs.*)::jsonb
+				row_to_json(c)::jsonb || row_to_json(lyrs.*)::jsonb
 			FROM (
 				SELECT
 			        ST_AsGeoJSON(ST_Extent( ST_Transform( ST_SetSRID(lyr.geom, lyrs.srid), 4269) ))::json AS extent,
 					-- ST_AsGeoJSON(ST_Extent(geom))::json AS extent,
-					count(*) AS features,
-					array_to_json(ARRAY((SELECT column_name FROM information_schema.columns WHERE table_name ='%v'))) as properties
+					count(*) AS features
+					-- ,
+					--array_to_json(ARRAY((SELECT column_name FROM information_schema.columns WHERE table_name ='%v'))) as properties
 				FROM "%v" AS lyr
 				INNER JOIN
 					layers AS lyrs

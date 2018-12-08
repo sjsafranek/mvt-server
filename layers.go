@@ -64,8 +64,8 @@ func loadLayerMetadata() {
 		res, err = fetchLayerFromDatabase(layer_name)
 		if nil != err {
 			logger.Error(err)
-			logger.Warnf("Marking layer %v as deleted", layer_name)
-			deleteLayerFromDatabase(layer_name)
+			// logger.Warnf("Marking layer %v as deleted", layer_name)
+			// deleteLayerFromDatabase(layer_name)
 			// panic(err)
 			continue
 		}
