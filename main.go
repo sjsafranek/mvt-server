@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
@@ -27,6 +28,7 @@ var (
 	config      Config = Config{}
 	CONFIG_FILE string = DEFAULT_CONFIG_FILE
 	PORT        int    = DEFAULT_PORT
+	DEBUG       bool   = false
 	ACTION      string = DEFAULT_ACTION
 )
 
@@ -36,6 +38,7 @@ func init() {
 	flag.StringVar(&ACTION, "action", DEFAULT_ACTION, "Action")
 	flag.StringVar(&CONFIG_FILE, "c", DEFAULT_CONFIG_FILE, "Config file")
 	flag.IntVar(&PORT, "p", DEFAULT_PORT, "Server port")
+	flag.BoolVar(&DEBUG, "debug", false, "debug mode")
 	flag.StringVar(&DATABASE_HOST, "h", DEFAULT_DATABASE_HOST, "database host")
 	flag.StringVar(&DATABASE_DATABASE, "n", DEFAULT_DATABASE_DATABASE, "database name")
 	flag.StringVar(&DATABASE_PASSWORD, "pw", DEFAULT_DATABASE_PASSWORD, "database password")
@@ -97,6 +100,15 @@ func main() {
 		CookTiles(layer, int(beginZoom), int(endZoom))
 
 	case "web":
+
+		logger.Debugf("%v-%v", PROJECT, VERSION)
+		logger.Debug("GOOS: ", runtime.GOOS)
+		logger.Debug("CPUS: ", runtime.NumCPU())
+		logger.Debug("PID: ", os.Getpid())
+		logger.Debug("Go Version: ", runtime.Version())
+		logger.Debug("Go Arch: ", runtime.GOARCH)
+		logger.Debug("Go Compiler: ", runtime.Compiler)
+		logger.Debug("NumGoroutine: ", runtime.NumGoroutine())
 
 		loadLayerMetadata()
 

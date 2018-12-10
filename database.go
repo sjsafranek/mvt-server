@@ -72,6 +72,11 @@ $BODY$
   LANGUAGE plpgsql IMMUTABLE;
 
 		`
+
+		if DEBUG {
+			logger.Debug(query)
+		}
+
 		row := db.QueryRow(query)
 		return row.Scan(&result)
 	})
@@ -95,6 +100,11 @@ func fetchLayersFromDatabase() (string, error) {
 		                is_deleted = false
 		        ) c;
 		`
+
+		if DEBUG {
+			logger.Debug(query)
+		}
+
 		row := db.QueryRow(query)
 		return row.Scan(&result)
 	})
@@ -119,6 +129,11 @@ func deleteLayerFromDatabase(layer_name string) error {
 				SET is_deleted='t'
 			 	WHERE layer_name = '%v';
 		`, layer_name)
+
+		if DEBUG {
+			logger.Debug(query)
+		}
+
 		_, err = db.Exec(query)
 		return err
 	})
@@ -160,7 +175,9 @@ func fetchLayerFromDatabase(layer_name string) (string, error) {
 					ON layer_name = '%v';
 		`, layer_name, layer_name, layer_name, layer_name)
 
-		logger.Debug(query)
+		if DEBUG {
+			logger.Debug(query)
+		}
 
 		row := db.QueryRow(query)
 		return row.Scan(&result)
@@ -190,8 +207,15 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 
 		query := ""
 
+		if "" != filter {
+			filter = strings.Replace(filter, "WHERE ", "", -1)
+			filter = strings.Replace(filter, "where ", "", -1)
+			filter = fmt.Sprintf("AND %v", filter)
+		}
+
 		// if srid is not 3857 feature geom must be converted
 		if 3857 != srid {
+
 			query = fmt.Sprintf(`
 			SET work_mem = '2GB';
 
@@ -203,6 +227,16 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 				FROM
 					"%v" AS lyr
 				-- client side filter... stylesheet?
+				-- TODO filter with bbox
+
+				WHERE
+						fts.geom && %v
+					AND
+						ST_Intersects(
+							fts.geom,
+							%v
+						)
+
 				%v
 			)
 
@@ -228,18 +262,18 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 							%v
 						)
 			) AS q;
-		`, srid, layer_name, filter, bbox, bbox, bbox)
+		`, srid, layer_name, bbox, bbox, filter, bbox, bbox, bbox)
 
 		}
 
 		//
 		if 3857 == srid {
 
-			if "" != filter {
-				filter = strings.Replace(filter, "WHERE ", "", -1)
-				filter = strings.Replace(filter, "where ", "", -1)
-				filter = fmt.Sprintf("AND %v", filter)
-			}
+			// if "" != filter {
+			// 	filter = strings.Replace(filter, "WHERE ", "", -1)
+			// 	filter = strings.Replace(filter, "where ", "", -1)
+			// 	filter = fmt.Sprintf("AND %v", filter)
+			// }
 
 			query = fmt.Sprintf(`
 			SET work_mem = '2GB';
@@ -269,6 +303,10 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 			) AS q;
 		`, bbox, layer_name, bbox, bbox, filter)
 
+		}
+
+		if DEBUG {
+			logger.Debug(query)
 		}
 
 		row := db.QueryRow(query)
