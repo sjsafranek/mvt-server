@@ -216,92 +216,123 @@ func fetchTileFromDatabase(layer_name string, x, y, z uint32, filter string) ([]
 		// if srid is not 3857 feature geom must be converted
 		if 3857 != srid {
 
+			// 	query = fmt.Sprintf(`
+			// 	SET work_mem = '2GB';
+			//
+			// 	WITH features AS (
+			// 		SELECT
+			// 			row_to_json(lyr)::jsonb - 'geom' AS properties,
+			// 			-- ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
+			// 			ST_Transform( ST_SetSRID(lyr.geom, %v), 3857) AS geom
+			// 		FROM
+			// 			"%v" AS lyr
+			// 		-- client side filter... stylesheet?
+			//
+			// 		WHERE
+			// 				fts.geom && %v
+			// 			AND
+			// 				ST_Intersects(
+			// 					fts.geom,
+			// 					%v
+			// 				)
+			//
+			// 		%v
+			// 	)
+			//
+			// 	SELECT
+			// 		ST_AsMVT(q, 'layer', 4096, 'geom')
+			// 	FROM (
+			// 		SELECT
+			// 			fts.properties,
+			// 			ST_AsMvtGeom(
+			// 				fts.geom,
+			// 				%v,
+			// 				4096,
+			// 				256,
+			// 				true
+			// 			) AS geom
+			// 		FROM
+			// 			features AS fts
+			// 		WHERE
+			// 				fts.geom && %v
+			// 			AND
+			// 				ST_Intersects(
+			// 					fts.geom,
+			// 					%v
+			// 				)
+			// 	) AS q;
+			// `, srid, layer_name, bbox, bbox, filter, bbox, bbox, bbox)
+
 			query = fmt.Sprintf(`
-			SET work_mem = '2GB';
+				SET work_mem = '2GB';
 
-			WITH features AS (
+				WITH features AS (
+					SELECT
+						row_to_json(lyr)::jsonb - 'geom' AS properties,
+						-- ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
+						ST_Transform( ST_SetSRID(lyr.geom, %v), 3857) AS geom
+					FROM
+						"%v" AS lyr
+					-- client side filter... stylesheet?
+					WHERE
+							fts.geom && %v
+						AND
+							ST_Intersects(
+								fts.geom,
+								%v
+							)
+						%v
+				)
+
 				SELECT
-					row_to_json(lyr)::jsonb - 'geom' AS properties,
-					-- ST_Transform( ST_SetSRID(lyr.geom, 4269), 3857) AS geom
-					ST_Transform( ST_SetSRID(lyr.geom, %v), 3857) AS geom
-				FROM
-					"%v" AS lyr
-				-- client side filter... stylesheet?
-				-- TODO filter with bbox
-
-				WHERE
-						fts.geom && %v
-					AND
-						ST_Intersects(
+					ST_AsMVT(q, 'layer', 4096, 'geom')
+				FROM (
+					SELECT
+						fts.properties,
+						ST_AsMvtGeom(
 							fts.geom,
-							%v
-						)
-
-				%v
-			)
-
-			SELECT
-				ST_AsMVT(q, 'layer', 4096, 'geom')
-			FROM (
-				SELECT
-					fts.properties,
-					ST_AsMvtGeom(
-						fts.geom,
-						%v,
-						4096,
-						256,
-						true
-					) AS geom
-				FROM
-					features AS fts
-				WHERE
-						fts.geom && %v
-					AND
-						ST_Intersects(
-							fts.geom,
-							%v
-						)
-			) AS q;
-		`, srid, layer_name, bbox, bbox, filter, bbox, bbox, bbox)
+							%v,
+							4096,
+							256,
+							true
+						) AS geom
+					FROM
+						features AS fts
+				) AS q;
+			`, srid, layer_name, bbox, bbox, filter, bbox)
 
 		}
 
 		//
 		if 3857 == srid {
 
-			// if "" != filter {
-			// 	filter = strings.Replace(filter, "WHERE ", "", -1)
-			// 	filter = strings.Replace(filter, "where ", "", -1)
-			// 	filter = fmt.Sprintf("AND %v", filter)
-			// }
-
 			query = fmt.Sprintf(`
-			SET work_mem = '2GB';
+				SET work_mem = '2GB';
 
-			SELECT
-				ST_AsMVT(q, 'layer', 4096, 'geom')
-			FROM (
 				SELECT
-					row_to_json(fts)::jsonb - 'geom' AS properties,
-					ST_AsMvtGeom(
-						fts.geom,
-						%v,
-						4096,
-						256,
-						true
-					) AS geom
-				FROM
-					"%v" AS fts
-				WHERE
-						fts.geom && %v
-					AND
-						ST_Intersects(
+					ST_AsMVT(q, 'layer', 4096, 'geom')
+				FROM (
+					SELECT
+						row_to_json(fts)::jsonb - 'geom' AS properties,
+						ST_AsMvtGeom(
 							fts.geom,
-							%v
-						)
-					%v
-			) AS q;
-		`, bbox, layer_name, bbox, bbox, filter)
+							%v,
+							4096,
+							256,
+							true
+						) AS geom
+					FROM
+						"%v" AS fts
+					WHERE
+							fts.geom && %v
+						AND
+							ST_Intersects(
+								fts.geom,
+								%v
+							)
+						%v
+				) AS q;
+			`, bbox, layer_name, bbox, bbox, filter)
 
 		}
 
