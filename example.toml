@@ -1,9 +1,13 @@
 title = "MVT-Server"
 
+[cache]
+  type = "redis"
+  port = 6379
+
 [database]
   database = "geodev"
   host = "127.0.0.1"
-  port = 1111
+  port = 5432
   password = "dev"
   type = "postgres"
   username = "geodev"

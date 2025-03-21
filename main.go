@@ -13,6 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sjsafranek/ligneous"
+
+	"mvt-server/lib/tilecache"
 )
 
 const (
@@ -20,11 +22,12 @@ const (
 	DEFAULT_CONFIG_FILE string = "config.toml"
 	DEFAULT_PORT        int    = 5555
 	PROJECT             string = "mvt-server"
-	VERSION             string = "0.0.1"
+	VERSION             string = "0.01.11"
 )
 
 var (
-	logger             = ligneous.NewLogger()
+	logger      = ligneous.AddLogger("app", "debug", "logs")
+	tileCache   tilecache.TileCache
 	config      Config = Config{}
 	CONFIG_FILE string = DEFAULT_CONFIG_FILE
 	PORT        int    = DEFAULT_PORT
@@ -44,6 +47,7 @@ func init() {
 	flag.StringVar(&DATABASE_PASSWORD, "pw", DEFAULT_DATABASE_PASSWORD, "database password")
 	flag.StringVar(&DATABASE_USERNAME, "un", DEFAULT_DATABASE_USERNAME, "database username")
 	flag.Int64Var(&DATABASE_PORT, "dbp", DEFAULT_DATABASE_PORT, "Database port")
+	flag.StringVar(&tilecache.TILE_CACHE_TYPE, "cacheType", tilecache.DEFAULT_TILE_CACHE_TYPE, "tile cache type")
 
 	flag.BoolVar(&print_version, "V", false, "Print version and exit")
 
@@ -81,27 +85,47 @@ func init() {
 func main() {
 
 	logger.Infof("Using database connection: %v", config.Database.ConnectionString())
-	databaseSetup()
+
+	layers, err := NewLayerCollection(config.Database.ConnectionString(), false)
+	if nil != err {
+		panic(err)
+	}
+	LAYERS = layers
 
 	switch ACTION {
 
-	case "ls":
-		loadLayerMetadata()
-		for layer := range LAYERS {
-			fmt.Println(layer)
-		}
-
 	case "cook":
-		loadLayerMetadata()
+
+		cache, err := tilecache.NewTileCache(config.Cache)
+		if nil != err {
+			panic(err)
+		}
+		tileCache = cache
+
 		args := flag.Args()
 		layer := args[0]
-		beginZoom, _ := strconv.ParseUint(args[1], 10, 64)
-		endZoom, _ := strconv.ParseUint(args[2], 10, 64)
-		CookTiles(layer, int(beginZoom), int(endZoom))
+		filter := args[1]
+		beginZoom, _ := strconv.ParseUint(args[2], 10, 64)
+		endZoom, _ := strconv.ParseUint(args[3], 10, 64)
+
+		// allow user to specify their own bounding box
+		if 8 == len(args) {
+			minlat, _ := strconv.ParseFloat(args[4], 64)
+			maxlat, _ := strconv.ParseFloat(args[5], 64)
+			minlng, _ := strconv.ParseFloat(args[6], 64)
+			maxlng, _ := strconv.ParseFloat(args[7], 64)
+
+			CookTilesInSelectedBounds(layer, filter, int(beginZoom), int(endZoom), minlat, maxlat, minlng, maxlng)
+		} else {
+			// use bounding box of layer (default)
+			CookTilesInLayerBounds(layer, filter, int(beginZoom), int(endZoom))
+		}
 
 	case "web":
 
-		logger.Debugf("%v-%v", PROJECT, VERSION)
+		logger.Debugf("%v:%v", PROJECT, VERSION)
+		hostname, err := os.Hostname()
+		logger.Debug("Hostname: ", hostname)
 		logger.Debug("GOOS: ", runtime.GOOS)
 		logger.Debug("CPUS: ", runtime.NumCPU())
 		logger.Debug("PID: ", os.Getpid())
@@ -110,23 +134,47 @@ func main() {
 		logger.Debug("Go Compiler: ", runtime.Compiler)
 		logger.Debug("NumGoroutine: ", runtime.NumGoroutine())
 
-		loadLayerMetadata()
+		cache, err := tilecache.NewTileCache(config.Cache)
+		if nil != err {
+			panic(err)
+		}
+		tileCache = cache
+
+		// Why wasn't this handled?
+		// _ = LAYERS.Init()
+		go func() {
+			err = LAYERS.Init()
+			if nil != err {
+				panic(err)
+			}
+		}()
+
+		go commandListener()
 
 		router := mux.NewRouter()
-		router.HandleFunc("/api/v1/layers", LayersHandler).Methods("GET")
-		router.HandleFunc("/api/v1/layer/{layer_name}", LayerHandler).Methods("GET")
-		router.HandleFunc("/api/v1/layer/{layer_name}/tile/{z:[0-9]+}/{x:[0-9]+}/{y:[0-9]+}.mvt", VectorTileHandler).Methods("GET")
+		// https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
+		router.HandleFunc("/web", ViewMapHandler).Methods("GET", "OPTIONS")
+		router.HandleFunc("/api/v1/layers", ApiV1LayersHandler).Methods("GET", "OPTIONS")
+		router.HandleFunc("/api/v1/layer/{layer_name}", ApiV1LayerHandler).Methods("GET", "OPTIONS")
+		router.HandleFunc("/api/v1/layer/{layer_name}/wfs", ApiV1WebFeatureServiceHandler).Methods("POST", "OPTIONS")
+		router.HandleFunc("/api/v1/layer/{layer_name}/tile/{z:[0-9]+}/{x:[0-9]+}/{y:[0-9]+}.mvt", ApiV1TileMapServiceGetVectorTile).Methods("GET", "OPTIONS")
 
-		router.Use(LoggingMiddleWare, SetHeadersMiddleWare)
+		router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+		router.Use(LoggingMiddleWare(logger), SetHeadersMiddleWare, CORSMiddleWare)
 
 		port := fmt.Sprintf("%v", PORT)
+
 		logger.Info(fmt.Sprintf("Magic happens on port %v...", port))
-		err := http.ListenAndServe(":"+port, router)
+		err = http.ListenAndServe(":"+port, router)
 		if err != nil {
 			panic(err)
 		}
 
 	case "upload":
+
+		_ = LAYERS.Init()
+
 		// TODO: check for errors...
 		if 4 != len(flag.Args()) {
 			fmt.Println(flag.Args())

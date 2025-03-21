@@ -6,15 +6,17 @@ import (
 
 	"github.com/pelletier/go-toml"
 	"github.com/sjsafranek/goutils"
+
+	"mvt-server/lib/tilecache"
 )
 
 const (
-	DEFAULT_DATABASE_ENGINE         = "postgres"
-	DEFAULT_DATABASE_DATABASE       = "geodev"
-	DEFAULT_DATABASE_PASSWORD       = "dev"
-	DEFAULT_DATABASE_USERNAME       = "geodev"
-	DEFAULT_DATABASE_HOST           = "localhost"
-	DEFAULT_DATABASE_PORT     int64 = 5432
+	DEFAULT_DATABASE_ENGINE   string = "postgres"
+	DEFAULT_DATABASE_DATABASE string = "geodev"
+	DEFAULT_DATABASE_PASSWORD string = "dev"
+	DEFAULT_DATABASE_USERNAME string = "geodev"
+	DEFAULT_DATABASE_HOST     string = "localhost"
+	DEFAULT_DATABASE_PORT     int64  = 5432
 )
 
 var (
@@ -27,9 +29,10 @@ var (
 )
 
 type Config struct {
-	Title    string         `toml:"title"`
-	Server   ServerConfig   `toml:"server"`
-	Database DatabaseConfig `toml:"database"`
+	Title    string           `toml:"title"`
+	Server   ServerConfig     `toml:"server"`
+	Database DatabaseConfig   `toml:"database"`
+	Cache    tilecache.Config `toml:"cache"`
 }
 
 type ServerConfig struct {
@@ -50,6 +53,8 @@ func (self *Config) UseDefaults() error {
 	self.Title = "MVT-Server"
 	self.Server.Port = DEFAULT_PORT
 	self.Server.Secret = utils.RandomString(10)
+	self.Cache.Directory = tilecache.TILE_CACHE_DIRECTORY
+	self.Cache.Type = tilecache.TILE_CACHE_TYPE
 	self.Database.Type = DATABASE_ENGINE
 	self.Database.Database = DATABASE_DATABASE
 	self.Database.Password = DATABASE_PASSWORD

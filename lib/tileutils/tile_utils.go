@@ -1,13 +1,13 @@
-package main
+package tileutils
 
 import (
 	"math"
 )
 
-type xyz struct {
-	x uint32
-	y uint32
-	z uint32
+type Tile struct {
+	X uint32
+	Y uint32
+	Z uint32
 }
 
 // degTorad converts degree to radians.
@@ -24,9 +24,9 @@ func deg2num(latDeg float64, lonDeg float64, zoom int) (int, int) {
 	return xtile, ytile
 }
 
-// GetTileNames returns tile xyz for bounding box and zoom
-func GetTileNamesFromMapView(minlat, maxlat, minlng, maxlng float64, z int) []xyz {
-	tiles := []xyz{}
+// GetTileNames returns tile Tile for bounding box and zoom
+func GetTilesFromBounds(minlat, maxlat, minlng, maxlng float64, z int) []Tile {
+	tiles := []Tile{}
 
 	// upper right
 	ur_tile_x, ur_tile_y := deg2num(maxlat, maxlng, z)
@@ -45,7 +45,7 @@ func GetTileNamesFromMapView(minlat, maxlat, minlng, maxlng float64, z int) []xy
 			if y < 0 {
 				y = 0
 			}
-			tiles = append(tiles, xyz{uint32(x), uint32(y), uint32(z)})
+			tiles = append(tiles, Tile{uint32(x), uint32(y), uint32(z)})
 		}
 	}
 

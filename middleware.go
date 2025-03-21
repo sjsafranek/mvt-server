@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"time"
+
+	"github.com/sjsafranek/ligneous"
 )
 
 // https://ndersson.me/post/capturing_status_code_in_net_http/
@@ -28,22 +30,34 @@ func (self *statusWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
-func LoggingMiddleWare(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+func LoggingMiddleWare(l ligneous.Log) func(http.Handler) http.Handler {
+	// return handler function
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
 
-		// before
-		logger.Debugf(" In %v %v %v", r.RemoteAddr, r.Method, r.URL)
+			// before
+			l.Debugf(" In %v %v %v", r.RemoteAddr, r.Method, r.URL)
 
-		// Initialize the status to 200 in case WriteHeader is not called
-		sw := statusWriter{w, 200, 0}
+			// handle websockets...
+			for _, header := range r.Header["Upgrade"] {
+				if header == "websocket" {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
 
-		// during
-		next.ServeHTTP(&sw, r)
+			// Initialize the status to 200 in case WriteHeader is not called
+			sw := statusWriter{w, 200, 0}
 
-		// end
-		logger.Debugf("Out %v %v %v [%v] %v - %v bytes", r.RemoteAddr, r.Method, r.URL, sw.status, time.Since(start), sw.length)
-	})
+			// during
+			next.ServeHTTP(&sw, r)
+
+			// end
+			l.Debugf("Out %v %v %v [%v] %v - %v bytes", r.RemoteAddr, r.Method, r.URL, sw.status, time.Since(start), sw.length)
+		})
+	}
+	//.end
 }
 
 func SetHeadersMiddleWare(next http.Handler) http.Handler {
@@ -54,5 +68,16 @@ func SetHeadersMiddleWare(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func CORSMiddleWare(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(200)
+			return
+		} else {
+			next.ServeHTTP(w, r)
+		}
 	})
 }

@@ -1,10 +1,10 @@
-version: '3.3'
+version: '3.0'
 
 services:
-   # redis:
-   #   image: redis
-   #   networks:
-   #     - webnet
+   redis:
+     image: redis
+     networks:
+       - webnet
    db:
      image: mdillon/postgis
      volumes:
@@ -18,12 +18,28 @@ services:
        POSTGRES_USER: geodev
        POSTGRES_PASSWORD: dev
        POSTGRES_DB: geodev
+   web:
+     build: .
+     ports:
+       - "5555:5555"
+#     links:
+#      - "db:database"
+     networks:
+       - webnet
+     depends_on:
+       - db
+       - redis
+     # command: ["./wait-for-postgres.sh", "db:1111", "cd /app && go run *.go -h db -dbp 1111"]
+
+     #command: ["./app/wait-for-postgres.sh", "db:5432", "git clone https://github.com/sjsafranek/mvt-server.git && cd mvt-server && go run *.go -h db -dbp 1111"]
    # web:
    #   build: .
-   #   command: /bin/bash -c 'cd mvt-server/ && /usr/local/go/bin/go run *.go -h db'
    #   ports:
    #     - "5555:5555"
+   #   networks:
+   #     - webnet
    #   depends_on:
    #     - db
+   #     - redis
 networks:
-  webnet:
+   webnet:
